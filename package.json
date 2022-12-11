@@ -1,0 +1,77 @@
+{
+  "name": "eosetf",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@alienworlds/ual-wax": "^1.6.1",
+    "@emotion/react": "^11.7.1",
+    "@emotion/styled": "^11.6.0",
+    "@fortawesome/free-regular-svg-icons": "^5.15.2",
+    "@fortawesome/free-solid-svg-icons": "^5.15.2",
+    "@material-ui/core": "^4.11.2",
+    "@material-ui/icons": "^4.11.2",
+    "@mui/material": "^5.6.2",
+    "@nivo/bar": "^0.70.1",
+    "@nivo/core": "^0.70.1",
+    "@testing-library/jest-dom": "^5.11.4",
+    "@testing-library/react": "^11.1.0",
+    "@testing-library/user-event": "^12.1.10",
+    "anchor-link": "^3.2.3",
+    "anchor-link-browser-transport": "^3.1.3",
+    "bluebird": "^3.7.2",
+    "bootstrap": "^5.2.2",
+    "canvasjs": "^1.8.3",
+    "chart.js": "^2.9.4",
+    "nivo": "^0.31.0",
+    "react": "^17.0.1",
+    "react-bootstrap": "^2.6.0",
+    "react-chartjs-2": "^2.11.1",
+    "react-circular-progressbar": "^2.0.4",
+    "react-countdown": "^2.3.2",
+    "react-custom-scrollbar": "^1.0.0",
+    "react-custom-scrollbars": "^4.2.1",
+    "react-dom": "^17.0.1",
+    "react-dropdown": "^1.9.2",
+    "react-ga": "^3.3.0",
+    "react-perfect-scrollbar": "^1.5.8",
+    "react-scripts": "4.0.1",
+    "react-scrollbar": "^0.5.6",
+    "react-select": "^5.2.0",
+    "react-tooltip": "^4.2.13",
+    "recharts": "^2.0.6",
+    "sweetalert2": "^10.13.0",
+    "ual-anchor": "^1.0.9",
+    "ual-eosio-reference-authenticator": "^0.3.0",
+    "ual-lynx": "^0.4.0",
+    "ual-metamask": "^1.0.2",
+    "ual-reactjs-renderer": "^0.3.1",
+    "ual-scatter": "^0.3.0",
+    "ual-token-pocket": "^0.3.0",
+    "ual-wombat": "^0.3.3",
+    "web-vitals": "^0.2.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
