@@ -299,7 +299,6 @@ function App(props) {
   };
 
   const [govrnprice, setGovrnprice] = useState({ rows: [] });
-  const [dadpriceeos, setDadprice] = useState({ rows: [] });
   const [eosetfprice, setEosetfprice] = useState({ rows: [] });
   const [etfprice, setEtfprice] = useState();
   const [periodbutton, setPeriodbutton] = useState("a year");
@@ -307,7 +306,6 @@ function App(props) {
   const [prices, setPrices] = useState([]);
   const [chartprices, setChartPrices] = useState([]);
   const [refresh, setRefresh] = useState(0);
-  const [eosusdt, setEosusdt] = useState();
   const [dividendflag, setDividendflag] = useState();
   const [dividendflagcetf, setDividendflagcetf] = useState();
 
@@ -339,7 +337,7 @@ function App(props) {
     </div>
   );
 
-  const endpoint = "https://api.main.alohaeos.com";
+  const endpoint = "https://api.waxsweden.org";
   //  const endpoint = localStorage.getItem("endpoint");
   // Renderer callback with condition
   const renderer = ({ hours, minutes, seconds, completed }) => {
@@ -474,45 +472,6 @@ function App(props) {
     setDrawerstate(false);
   };
 
-  useEffect(() => {
-    fetch(`${endpoint}/v1/chain/get_table_rows`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        json: true,
-        code: "swap.defi",
-        table: "pairs",
-        scope: "swap.defi",
-        lower_bound: 588,
-        upper_bound: 588,
-        limit: 1,
-      }),
-    }).then((response) =>
-      response.json().then((dadpriceeos) => setDadprice(dadpriceeos))
-    );
-    fetch(`${endpoint}/v1/chain/get_table_rows`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        json: true,
-        code: "swap.defi",
-        table: "pairs",
-        scope: "swap.defi",
-        lower_bound: 12,
-        upper_bound: 12,
-        limit: 1,
-      }),
-    }).then((response) =>
-      response.json().then((price) => setEosusdt(price.rows[0].price0_last))
-    );
-  }, [accountname]);
-
 
   //EDITIT. On alcor, new lowe and upper bound for EOSETF.
   const mainfunc = useCallback(async () => {
@@ -539,11 +498,11 @@ function App(props) {
     );
 
     data.reserve0overliquidity =
-      Number(data.defibox.pool1?.quantity?.split(" ")[0]) /
-      data.defibox.liquidity_token;
+      Number(data.defibox?.pool1?.quantity?.split(" ")[0]) /
+      data.defibox?.liquidity_token;
     data.reserve1overliquidity =
-      Number(data.defibox.pool2?.quantity?.split(" ")[0]) /
-      data.defibox.liquidity_token;
+      Number(data.defibox?.pool2?.quantity?.split(" ")[0]) /
+      data.defibox?.liquidity_token;
 
     /**DON*T NEED 
       await fetch(`${endpoint}/v1/chain/get_table_rows`, {
@@ -618,16 +577,16 @@ function App(props) {
         code: "fundfundfund",
         table: "accounts",
         scope: activeUser?.accountName,
-        lower_bound: "EOSETF",
-        upper_bound: "EOSETF",
+        lower_bound: "WAXFUND",
+        upper_bound: "WAXFUND",
         limit: 1,
       }),
     }).then((response) =>
       response.json().then((result) => {
         if (result?.rows[0]?.balance) {
-          data.eosetfbalance = result.rows[0];
+          data.eosetfbalance = result?.rows[0];
         } else {
-          data.eosetfbalance = { balance: "0.0000 EOSETF" };
+          data.eosetfbalance = { balance: "0.0000 WAXFUND" };
         }
       })
     );
@@ -643,8 +602,8 @@ function App(props) {
         code: "fundfundfund",
         table: "accounts",
         scope: activeUser?.accountName,
-        lower_bound: "CETF",
-        upper_bound: "CETF",
+        lower_bound: "PROFIT",
+        upper_bound: "PROFIT",
         limit: 1,
       }),
     }).then((response) =>
@@ -665,16 +624,17 @@ function App(props) {
       },
       body: JSON.stringify({
         json: true,
-        code: "swap.defi",
-        table: "pairs",
-        scope: "swap.defi",
+        code: "delphioracle",
+        table: "datapoints",
+        scope: "waxpusd",
         lower_bound: "12",
         upper_bound: "12",
         limit: 1,
       }),
     }).then((response) =>
       response.json().then((result) => {
-        data.eosdefibox = result.rows[0];
+        data.eosdefibox = result.rows[0].median / 10000;
+        console.log("EOSDEFIBOX" + data.eosdefibox)
       })
     );
 
@@ -764,7 +724,7 @@ function App(props) {
     );
 
     setDepositamounteosetf(
-      parseFloat(depositamounteos / Number(data.defibox.price1_last)).toFixed(4)
+      parseFloat(depositamounteos / (Number(data?.defibox?.rows[0]?.pool1?.quantity?.split(" ")[0]) / Number(data?.defibox?.price?.rows[0]?.pool2?.quantity?.split(" ")[0]))).toFixed(4)
     );
     data.eosetfpriceineos = Number(data.defibox.price1_last);
     data.eosetfpriceinusd =
@@ -834,118 +794,6 @@ function App(props) {
       } catch (e) {
         swal_error(e);
       }
-    }
-  };
-
-  const selltokens = async () => {
-    const reserve0 = Number(eosetfprice?.rows[0]?.pool1?.quantity.split(" ")[0]);
-    const reserve1 = Number(eosetfprice?.rows[0]?.pool2?.quantity.split(" ")[0]);
-    const slippage =
-      reserve0 / reserve1 / (reserve0 / (reserve1 + Number(selltokenamount)));
-    if ((slippage - 1) * 100 > 3) {
-      swal_error(
-        "Slippage is higher than 3%. (" +
-        ((slippage - 1) * 100).toFixed(2) +
-        "%)"
-      );
-      return;
-    }
-    /**slippage = reserve0/reserve1/(reserve0/(reserve1+multparse))
-
-multparse = parseFloat((mult * tokenamount)).toFixed(nr)
-
-mult = Number(value.minamount.split(" ")[0])**/
-
-    if (activeUser) {
-      try {
-        const transaction = {
-          actions: [
-            {
-              account: "fundfundfund",
-              name: "transfer",
-              authorization: [
-                {
-                  actor: displayaccountname(),
-                  permission: "active",
-                },
-              ],
-              data: {
-                from: displayaccountname(),
-                to: "swap.defi",
-                quantity: parseFloat(selltokenamount).toFixed(4) + " EOSETF",
-                memo: "swap,0,1232",
-              },
-            },
-          ],
-        };
-        await activeUser.signTransaction(transaction, {
-          broadcast: true,
-          expireSeconds: 300,
-        });
-        swal_success(`${selltokenamount} EOSETF sold!`);
-        setTimeout(() => {
-          setRefresh(refresh + 1);
-        }, 3000);
-      } catch (e) {
-        swal_error(e);
-      }
-    }
-  };
-
-  useEffect(() => {
-    fetch(`${endpoint}/v1/chain/get_table_rows`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        json: true,
-        code: "swap.defi",
-        table: "pairs",
-        scope: "swap.defi",
-        lower_bound: 1232,
-        upper_bound: 1232,
-        limit: 1,
-      }),
-    }).then((response) =>
-      response.json().then((eosetfprice) => setEosetfprice(eosetfprice))
-    );
-  }, [accountname]);
-
-  const getdadprice = () => {
-    if (dadpriceeos.rows[0]) {
-      return Number(dadpriceeos.rows[0].price1_last);
-    } else {
-      return 0;
-    }
-  };
-
-  const geteosetfprice = () => {
-    if (eosetfprice.rows[0]) {
-      return Number(eosetfprice.rows[0].price1_last);
-    } else {
-      return 0;
-    }
-  };
-
-  const getpricesum = () => {
-    if (prices) {
-      return (
-        getprice("box") * boxmult +
-        getprice("ogx") * ogxmult +
-        getprice("iq") * iqmult +
-        getprice("dapp") * dappmult +
-        getprice("vig") * vigmult +
-        getprice("efx") * efxmult +
-        getprice("chex") * chexmult +
-        getprice("pizza") * pizzamult +
-        getprice("dfs") * dfsmult +
-        getprice("emt") * emtmult +
-        getprice("dex") * dexmult +
-        getprice("tpt") * tptmult +
-        getdadprice() * dadmult
-      );
     }
   };
 
@@ -1285,8 +1133,8 @@ mult = Number(value.minamount.split(" ")[0])**/
           code: "fundfundfund",
           table: "accounts",
           scope: displayaccountname(),
-          lower_bound: "EOSETF",
-          upper_bound: "EOSETF",
+          lower_bound: "WAXFUND",
+          upper_bound: "WAXFUND",
           limit: 1,
         }),
       }).then((response) =>
@@ -1309,8 +1157,8 @@ mult = Number(value.minamount.split(" ")[0])**/
           table: "accounts",
           scope: displayaccountname(),
           limit: 1,
-          upper_bound: "CETF",
-          lower_bound: "CETF",
+          upper_bound: "PROFIT",
+          lower_bound: "PROFIT",
         }),
       }).then((response) =>
         response.json().then((etfbalanceind) => {
@@ -1332,7 +1180,7 @@ mult = Number(value.minamount.split(" ")[0])**/
           }).then((response) =>
             response.json().then((res) => {
               const stakedamount = Number(
-                etfbalanceind?.rows[0]?.balance.split(" ")[0]
+                etfbalanceind?.rows[0]?.balance?.split(" ")[0]
               );
               if (stakedamount) {
                 setStakemax(stakedamount);
@@ -1374,8 +1222,8 @@ mult = Number(value.minamount.split(" ")[0])**/
         }),
       }).then((response) =>
         response.json().then((res) => {
-          dividenddata["periodstart"] = res.rows[0].periodstart;
-          dividenddata["totalclaimperiod"] = res.rows[0].claimperiod;
+          dividenddata["periodstart"] = res?.rows[0]?.periodstart;
+          dividenddata["totalclaimperiod"] = res?.rows[0]?.claimperiod;
         })
       );
 
@@ -1641,8 +1489,8 @@ mult = Number(value.minamount.split(" ")[0])**/
         code: "fundfundfund",
         table: "accounts",
         scope: displayaccountname(),
-        lower_bound: "CETF",
-        upper_bound: "CETF",
+        lower_bound: "PROFIT",
+        upper_bound: "PROFIT",
         limit: 1,
       }),
     }).then((response) =>
@@ -1661,7 +1509,7 @@ mult = Number(value.minamount.split(" ")[0])**/
         json: true,
         code: "fundfundfund",
         table: "stat",
-        scope: "CETF",
+        scope: "PROFIT",
         limit: 1,
       }),
     }).then((response) =>
@@ -1680,7 +1528,7 @@ mult = Number(value.minamount.split(" ")[0])**/
         json: true,
         code: "fundfundfund",
         table: "stat",
-        scope: "EOSETF",
+        scope: "WAXFUND",
         limit: 1,
       }),
     }).then((response) =>
@@ -2020,7 +1868,7 @@ mult = Number(value.minamount.split(" ")[0])**/
                 from: displayaccountname(),
                 to: "fundfundfund",
                 //quantity: 19.2562 * tokens + " DAPP",
-                memo: "EOSETF creation through eosetf.io",
+                memo: "WAXFUND creation through eosetf.io",
                 quantity:
                   parseFloat(
                     value.minamount.split(" ")[0] * tokenamount
@@ -2284,8 +2132,8 @@ mult = Number(value.minamount.split(" ")[0])**/
               data: {
                 from: displayaccountname(),
                 to: "fundfundfund",
-                quantity: Number(selltokenamount).toFixed(4) + " EOSETF",
-                memo: "EOSETF redemption through eosetf.io",
+                quantity: Number(selltokenamount).toFixed(4) + " WAXFUND",
+                memo: "WAXFUND redemption through eosetf.io",
               },
             },
           ],
@@ -2819,7 +2667,7 @@ mult = Number(value.minamount.split(" ")[0])**/
                           ),
                           startAdornment: (
                             <InputAdornment position="start">
-                              EOSETF
+                              WAXFUND
                             </InputAdornment>
                           ),
                         }}
@@ -2916,7 +2764,7 @@ mult = Number(value.minamount.split(" ")[0])**/
                             ),
                             startAdornment: (
                               <InputAdornment position="start">
-                                EOSETF
+                                WAXFUND
                               </InputAdornment>
                             ),
                           }}
@@ -2935,12 +2783,12 @@ mult = Number(value.minamount.split(" ")[0])**/
                                 portfoliodata?.eosetfbalance?.balance?.split(
                                   " "
                                 )[0]
-                              ).toFixed(4) + " EOSETF"
-                              : "0 EOSETF"}
+                              ).toFixed(4) + " WAXFUND"
+                              : "0 WAXFUND"}
                           </b>
                         </div>
                         <button
-                          onClick={() => selltokens()}
+                          onClick={() => console.log("NOT A THING")}
                           class="depositbutton"
                           style={{ marginTop: "20px" }}
                         >
@@ -3185,7 +3033,7 @@ mult = Number(value.minamount.split(" ")[0])**/
                 <div class="statcards">
                   <div class="statcard">
                     <a class="stat">
-                      {gettokensupply(eosetfbalance).toLocaleString()} EOSETF
+                      {gettokensupply(eosetfbalance).toLocaleString()} WAXFUND
                     </a>
                     <a class="statexplainer">Circulating supply</a>
                   </div>
@@ -3199,12 +3047,12 @@ mult = Number(value.minamount.split(" ")[0])**/
 
                   <div class="statcard">
                     <a class="stat">
-                      {parseFloat(geteosetfprice().toFixed(2))} EOS
+                      {parseFloat(etfprice?.toFixed(2))} EOS
                     </a>
-                    <a class="statexplainer">EOSETF price</a>
+                    <a class="statexplainer">WAXFUND price</a>
                   </div>
                   <div class="statcard">
-                    <a class="stat">{etfprice.toFixed(2)} EOS </a>
+                    <a class="stat">{etfprice?.toFixed(2)} EOS </a>
                     <a class="statexplainer">
                       Price of tokens bought separately
                     </a>
@@ -3225,7 +3073,7 @@ mult = Number(value.minamount.split(" ")[0])**/
           ) : view == "about" ? (
             <div class="rightbar">
               <div class="rightbartopbox">
-                <div class="createetftitle">EOSETF token allocation</div>
+                <div class="createetftitle">WAXFUND token allocation</div>
                 <div class="slidertext">
                   <a>Chart shows % (in USD) of each token in the fund</a>
                 </div>
@@ -3278,14 +3126,14 @@ mult = Number(value.minamount.split(" ")[0])**/
                             "padding-bottom": "1px",
                           }}
                         >
-                          Staking CETF enables you to claim fees that the EOSETF
+                          Staking CETF enables you to claim fees that the WAXFUND
                           generates. <br />
                           <br />
                           Fees can be claimed once per week in My portfolio
                           view.
                           <br />
                           <br />
-                          Amount of EOSETF you receive depends on the total amount of CETF staked.
+                          Amount of WAXFUND you receive depends on the total amount of CETF staked.
                           <br />
                           <br />
                           Fees can be claimed week after staking CETF.
@@ -3295,7 +3143,7 @@ mult = Number(value.minamount.split(" ")[0])**/
                   </div>
                   <div class="staketopcardwrapper">
                     <div class="staketopcard">
-                      <div class="stakestat">{Math.floor(stake) + " CETF"}</div>
+                      <div class="stakestat">{Math.floor(stake) + " PROFIT"}</div>
                       <div class="stakedescriptor">You are staking</div>
                     </div>
                   </div>
@@ -3376,20 +3224,20 @@ mult = Number(value.minamount.split(" ")[0])**/
                             "padding-bottom": "1px",
                           }}
                         >
-                          You can earn CETF tokens by depositing EOS and EOSETF
+                          You can earn CETF tokens by depositing EOS and WAXFUND
                           to Defibox.
                           <br />
                           <br />
-                          EOSETF and EOS can be withdrawn from Defibox anytime.
+                          WAXFUND and EOS can be withdrawn from Defibox anytime.
                           <br />
                           <br />
                           We don't recommend depositing more than 50% of your
-                          EOSETF and EOS holdings. You will always receive back
+                          WAXFUND and EOS holdings. You will always receive back
                           USD worth of tokens you deposited but you might lose
                           out on gains due to impermanent loss.
                           <br />
                           <br />
-                          CETF tokens can be staked to earn fees that the EOSETF
+                          CETF tokens can be staked to earn fees that the WAXFUND
                           generates.
                           <br />
                           <br />
@@ -3409,7 +3257,7 @@ mult = Number(value.minamount.split(" ")[0])**/
                   <CssTextField
                     id="outlined"
                     value={depositamounteosetf}
-                    onChange={(e) => deposit(e.target.value, "EOSETF")}
+                    onChange={(e) => deposit(e.target.value, "WAXFUND")}
                     sx={{
                       backgroundColor: "white",
                       opacity: 0.7,
@@ -3428,7 +3276,7 @@ mult = Number(value.minamount.split(" ")[0])**/
                         </InputAdornment>
                       ),
                       startAdornment: (
-                        <InputAdornment position="start">EOSETF</InputAdornment>
+                        <InputAdornment position="start">WAFUND</InputAdornment>
                       ),
                     }}
                   />
@@ -3535,7 +3383,7 @@ mult = Number(value.minamount.split(" ")[0])**/
                           "padding-bottom": "1px",
                         }}
                       >
-                        EOS and EOSETF balance does not include tokens deposited
+                        WAX and WAXFUND balance does not include tokens deposited
                         to Defibox.
                       </Typography>
                     </AccordionDetails>
@@ -3547,8 +3395,8 @@ mult = Number(value.minamount.split(" ")[0])**/
                       {accountname
                         ? Number(
                           portfoliodata?.eosetfbalance?.balance?.split(" ")[0]
-                        ).toFixed(4) + " EOSETF"
-                        : "0 EOSETF"}
+                        ).toFixed(4) + " WAXFUND"
+                        : "0 WAXFUND"}
                     </div>
                     <div class="portfoliodescriptor">
                       ~{portfoliodata?.eosetfinusd?.toFixed(0)} USD
@@ -3603,10 +3451,10 @@ mult = Number(value.minamount.split(" ")[0])**/
                         Available to claim
                       </div>
                       {dividendflag ? (
-                        <div class="claimtexts">EOSETF claimed!</div>
+                        <div class="claimtexts">WAXFUND claimed!</div>
                       ) : (
                           <div class="claimtexts">
-                            {dividendclaim.toFixed(4)} EOSETF
+                            {dividendclaim.toFixed(4)} WAXFUND
                           </div>
                         )}
                       {dividendflagcetf ? (
