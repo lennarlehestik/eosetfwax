@@ -357,103 +357,7 @@ function App(props) {
     }
   };
 
-  useEffect(async () => {
-    const block_time = 3;
-    const year_blocks = 31104000 / block_time;
-    const six_month_blocks = 15552000 / block_time;
-    const month_blocks = 2592000 / block_time;
-    let headblock;
 
-    await fetch(`${endpoint}/v1/chain/get_info`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-    }).then((response) =>
-      response.json().then((info) => {
-        headblock = info.head_block_num;
-      })
-    );
-    const year_blocks_ago = headblock - year_blocks;
-    const six_month_blocks_ago = headblock - six_month_blocks;
-    const month_blocks_ago = headblock - month_blocks;
-    let year_price;
-    let six_month_price;
-    let month_price;
-    let current_price;
-
-    await fetch(
-      `https://eos.dfuse.eosnation.io/v0/state/table/row?account=swap.defi&scope=swap.defi&table=pairs&key_type=uint64&block_num=${year_blocks_ago}&primary_key=1232&json=true`,
-      {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-      }
-    ).then((response) =>
-      response.json().then((val) => {
-        year_price = val.row.json.price1_last;
-      })
-    );
-    await fetch(
-      `https://eos.dfuse.eosnation.io/v0/state/table/row?account=swap.defi&scope=swap.defi&table=pairs&key_type=uint64&block_num=${six_month_blocks_ago}&primary_key=1232&json=true`,
-      {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-      }
-    ).then((response) =>
-      response.json().then((val) => {
-        six_month_price = val.row.json.price1_last;
-      })
-    );
-    await fetch(
-      `https://eos.dfuse.eosnation.io/v0/state/table/row?account=swap.defi&scope=swap.defi&table=pairs&key_type=uint64&block_num=${month_blocks_ago}&primary_key=1232&json=true`,
-      {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-      }
-    ).then((response) =>
-      response.json().then((val) => {
-        month_price = val.row.json.price1_last;
-      })
-    );
-    await fetch(`${endpoint}/v1/chain/get_table_rows`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        json: true,
-        code: "swap.defi",
-        table: "pairs",
-        scope: "swap.defi",
-        lower_bound: 1232,
-        upper_bound: 1232,
-        limit: 1,
-      }),
-    }).then((response) =>
-      response.json().then((val) => {
-        current_price = val.rows[0].price1_last;
-      })
-    );
-    const data = [];
-    data["a year"] = (100 + (current_price - year_price) * 100).toFixed(2);
-    data["six months"] = (
-      100 +
-      (current_price - six_month_price) * 100
-    ).toFixed(2);
-    data["a month"] = (100 + (current_price - month_price) * 100).toFixed(2);
-    setHistoricalprices(data);
-  }, []);
 
   const refresher = () => {
     setAccountName("");
@@ -475,7 +379,9 @@ function App(props) {
 
   //EDITIT. On alcor, new lowe and upper bound for EOSETF.
   const mainfunc = useCallback(async () => {
+    console.log("MAINFUNC")
     const data = [];
+    /**
     await fetch(`${endpoint}/v1/chain/get_table_rows`, {
       method: "POST",
       headers: {
@@ -487,8 +393,8 @@ function App(props) {
         code: "alcorammswap",
         table: "pairs",
         scope: "alcorammswap",
-        lower_bound: "1232",
-        upper_bound: "1232",
+        lower_bound: "1538", //EDITME
+        upper_bound: "1538", //EDITME
         limit: 1,
       }),
     }).then((response) =>
@@ -496,6 +402,7 @@ function App(props) {
         data.defibox = result.rows[0];
       })
     );
+    
 
     data.reserve0overliquidity =
       Number(data.defibox?.pool1?.quantity?.split(" ")[0]) /
@@ -503,7 +410,7 @@ function App(props) {
     data.reserve1overliquidity =
       Number(data.defibox?.pool2?.quantity?.split(" ")[0]) /
       data.defibox?.liquidity_token;
-
+    */
     /**DON*T NEED 
       await fetch(`${endpoint}/v1/chain/get_table_rows`, {
       method: "POST",
@@ -535,7 +442,7 @@ function App(props) {
       })
     );
     */
-
+    try{
     if (activeUser !== null) {
       await fetch(`${endpoint}/v1/chain/get_table_rows`, {
         method: "POST",
@@ -555,7 +462,9 @@ function App(props) {
       }).then((response) =>
         response.json().then((result) => {
           if (result?.rows[0]?.balance) {
-            data.eosbalance = result.rows[0];
+            data.eosbalance = result.rows[0]
+            console.log(result.rows[0])
+            console.log("not rekt")
           } else {
             data.eosbalance = { balance: "0.00000000 WAX" };
           }
@@ -563,33 +472,11 @@ function App(props) {
       );
     }
     else {
+      console.log("rekt")
       data.eosbalance = { balance: "0.00000000 WAX" };
     }
+    console.log(data?.eosbalance)
 
-    await fetch(`${endpoint}/v1/chain/get_table_rows`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        json: true,
-        code: "fundfundfund",
-        table: "accounts",
-        scope: activeUser?.accountName,
-        lower_bound: "WAXFUND",
-        upper_bound: "WAXFUND",
-        limit: 1,
-      }),
-    }).then((response) =>
-      response.json().then((result) => {
-        if (result?.rows[0]?.balance) {
-          data.eosetfbalance = result?.rows[0];
-        } else {
-          data.eosetfbalance = { balance: "0.0000 WAXFUND" };
-        }
-      })
-    );
 
     await fetch(`${endpoint}/v1/chain/get_table_rows`, {
       method: "POST",
@@ -611,7 +498,32 @@ function App(props) {
         if (result?.rows[0]?.balance) {
           data.cetfbalance = result.rows[0];
         } else {
-          data.cetfbalance = { balance: "0.0000 CETF" };
+          data.cetfbalance = { balance: "0.0000 PROFIT" };
+        }
+      })
+    );
+
+    await fetch(`${endpoint}/v1/chain/get_table_rows`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        json: true,
+        code: "fundfundfund",
+        table: "accounts",
+        scope: activeUser?.accountName,
+        lower_bound: "WAXFUND",
+        upper_bound: "WAXFUND",
+        limit: 1,
+      }),
+    }).then((response) =>
+      response.json().then((result) => {
+        if (result?.rows[0]?.balance) {
+          data.eosetfbalance = result.rows[0];
+        } else {
+          data.eosetfbalance = { balance: "0.0000 WAXFUND" };
         }
       })
     );
@@ -634,7 +546,6 @@ function App(props) {
     }).then((response) =>
       response.json().then((result) => {
         data.eosdefibox = result.rows[0].median / 10000;
-        console.log("EOSDEFIBOX" + data.eosdefibox)
       })
     );
 
@@ -686,7 +597,7 @@ function App(props) {
       response.json().then((res) => {
         if (activeUser) {
           share =
-            Number(boxaujsum) / Number(res.rows[0].totstketf.split(" ")[0]);
+            Number(boxaujsum) / Number(res?.rows[0]?.totstketf?.split(" ")[0]);
         }
       })
     );
@@ -726,12 +637,12 @@ function App(props) {
     setDepositamounteosetf(
       parseFloat(depositamounteos / (Number(data?.defibox?.rows[0]?.pool1?.quantity?.split(" ")[0]) / Number(data?.defibox?.price?.rows[0]?.pool2?.quantity?.split(" ")[0]))).toFixed(4)
     );
-    data.eosetfpriceineos = Number(data.defibox.price1_last);
+    data.eosetfpriceineos = eosetfbalance;
     data.eosetfpriceinusd =
-      Number(data.defibox.price1_last) * Number(data.eosdefibox.price0_last);
+    eosetfbalance * Number(data.eosdefibox.price0_last);
     data.eospriceinusd = Number(data.eosdefibox.price0_last);
     data.eosetfinusd =
-      Number(data.defibox.price1_last) *
+      Number(data.defibox?.price1_last) *
       Number(data.eosdefibox.price0_last) *
       Number(data?.eosetfbalance?.balance.split(" ")[0]);
     data.eosinusd =
@@ -743,11 +654,14 @@ function App(props) {
     });
     setWithdrawamounts(withdrawamounts);
     setPortfoliodata(data);
-
-  }, [activeUser])
+    } catch(e){
+      console.log(e)
+    }
+  }, [accountname])
 
   useEffect(() => {
     mainfunc()
+    
   }, [mainfunc]);
 
   const withdrawhandler = (index, amount) => {
@@ -797,39 +711,7 @@ function App(props) {
     }
   };
 
-  useEffect(() => {
-    const newdexcomms = [
-      { community: "box", symbol: "token.defi-box-eos" },
-      { community: "ogx", symbol: "core.ogx-ogx-eos" },
-      { community: "iq", symbol: "everipediaiq-iq-eos" },
-      { community: "dapp", symbol: "dappservices-dapp-eos" },
-      { community: "vig", symbol: "vig111111111-vig-eos" },
-      { community: "efx", symbol: "effecttokens-efx-eos" },
-      { community: "chex", symbol: "chexchexchex-chex-eos" },
-      { community: "pizza", symbol: "pizzatotoken-pizza-eos" },
-      { community: "dfs", symbol: "minedfstoken-dfs-eos" },
-      { community: "emt", symbol: "emanateoneos-emt-eos" },
-      { community: "dex", symbol: "token.newdex-dex-eos" },
-      { community: "tpt", symbol: "eosiotptoken-tpt-eos" },
-    ];
-    newdexcomms.forEach((item) => {
-      fetch("https://api.newdex.io/v1/price?symbol=" + item.symbol)
-        .then((response) => response.json())
-        .then((data) => {
-          Object.assign(item, { price: data?.data?.price });
-          setPrices([...newdexcomms]);
-        });
-    });
-  }, []);
 
-  const getprice = (community) => {
-    if (prices) {
-      const datar = prices.filter(function (data) {
-        return data.community == community;
-      });
-      if (datar[0]) return datar[0].price;
-    }
-  };
   /* NO NEED
   const senddeposit = async () => {
     if (activeUser) {
@@ -967,9 +849,9 @@ function App(props) {
           },
           body: JSON.stringify({
             json: true,
-            code: "swap.defi",
+            code: "alcorammswap",
             table: "pairs",
-            scope: "swap.defi",
+            scope: "alcorammswap",
             lower_bound: datar[index].pairid,
             upper_bound: datar[index].pairid,
             limit: 1,
@@ -977,13 +859,13 @@ function App(props) {
         })
           .then((resp) => resp.json())
           .then((data) => {
-            if (data?.rows[0]?.reserve0.split(" ")[1] == "EOS") {
-              datar[index].price = Number(data?.rows[0].price1_last);
+            if (data?.rows[0]?.pool1?.quantity?.split(" ")[1] !== "WAX") {
+              datar[index].price = (Number(data?.rows[0]?.pool2?.quantity?.split(" ")[0]) / Number(data?.rows[0]?.pool1?.quantity?.split(" ")[0]));
             } else {
-              datar[index].price = Number(data?.rows[0]?.price0_last);
+              datar[index].price = (Number(data?.rows[0]?.pool1?.quantity?.split(" ")[0]) / Number(data?.rows[0]?.pool2?.quantity?.split(" ")[0]));
             }
           })
-          .then(() => {
+          .then(async () => {
             const arr = [];
             const eosetfpricearray = [];
             const pricesum = datar
@@ -999,6 +881,83 @@ function App(props) {
             });
             setChartPrices(arr);
             setEtfprice(pricesum);
+
+
+            const block_time = 3;
+            const year_blocks = 31104000 / block_time;
+            const six_month_blocks = 15552000 / block_time;
+            const month_blocks = 2592000 / block_time;
+            let headblock;
+
+            await fetch(`${endpoint}/v1/chain/get_info`, {
+              method: "POST",
+              headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+              },
+            }).then((response) =>
+              response.json().then((info) => {
+                headblock = info.head_block_num;
+              })
+            );
+            const year_blocks_ago = headblock - year_blocks;
+            const six_month_blocks_ago = headblock - six_month_blocks;
+            const month_blocks_ago = headblock - month_blocks;
+            let year_price;
+            let six_month_price;
+            let month_price;
+            let current_price;
+
+            await fetch(
+              `https://eos.dfuse.eosnation.io/v0/state/table/row?account=swap.defi&scope=swap.defi&table=pairs&key_type=uint64&block_num=${year_blocks_ago}&primary_key=1232&json=true`,
+              {
+                method: "GET",
+                headers: {
+                  Accept: "application/json",
+                  "Content-Type": "application/json",
+                },
+              }
+            ).then((response) =>
+              response.json().then((val) => {
+                year_price = val.row.json.price1_last;
+              })
+            );
+            await fetch(
+              `https://eos.dfuse.eosnation.io/v0/state/table/row?account=swap.defi&scope=swap.defi&table=pairs&key_type=uint64&block_num=${six_month_blocks_ago}&primary_key=1232&json=true`,
+              {
+                method: "GET",
+                headers: {
+                  Accept: "application/json",
+                  "Content-Type": "application/json",
+                },
+              }
+            ).then((response) =>
+              response.json().then((val) => {
+                six_month_price = val.row.json.price1_last;
+              })
+            );
+            await fetch(
+              `https://eos.dfuse.eosnation.io/v0/state/table/row?account=swap.defi&scope=swap.defi&table=pairs&key_type=uint64&block_num=${month_blocks_ago}&primary_key=1232&json=true`,
+              {
+                method: "GET",
+                headers: {
+                  Accept: "application/json",
+                  "Content-Type": "application/json",
+                },
+              }
+            ).then((response) =>
+              response.json().then((val) => {
+                month_price = val.row.json.price1_last;
+              })
+            );
+            const data1 = [];
+            data1["a year"] = (100 + (pricesum - year_price) * 100).toFixed(2);
+            data1["six months"] = (
+              100 +
+              (pricesum - six_month_price) * 100
+            ).toFixed(2);
+            data1["a month"] = (100 + (current_price - month_price) * 100).toFixed(2);
+            setHistoricalprices(data1);
           })
           .then(() => {
             const prices = [];
@@ -1067,7 +1026,7 @@ function App(props) {
     //fetch main table
     //for each row in main table, fetch more => append to items in main state
     //outside of this function, start replacing hardcoded state with dynamic
-    const fetcher = (fetchdata) => {
+    const fetcher = async(fetchdata) => {
       setFulldata(fetchdata.rows);
       if (fetchdata.rows) {
         let data = fetchdata.rows;
@@ -1116,7 +1075,7 @@ function App(props) {
         //TODO RIGHT NOW FOR PRICE SUM. NEED TO ADD MULTIPLIERS.
       }
     };
-  }, [accountname]);
+  }, [activeUser]);
 
   useEffect(async () => {
     if (accountname) {
@@ -1575,7 +1534,7 @@ function App(props) {
         Math.pow(
           2,
           parseInt(
-            Math.floor(Number(etfbalance.rows[0].supply.split(" ")[0])) /
+            Math.floor(Number(etfbalance?.rows[0]?.supply.split(" ")[0])) /
             20000000
           )
         )
@@ -1601,6 +1560,8 @@ function App(props) {
 
   const dynamicsend = (buy) => {
     const fulldatacopy = fulldata.filter((item) => item.ratio > 0);
+    console.log(fulldatacopy)
+
     let alldata = [];
     /**if (fulldatacopy) {
       Promise.all(
@@ -2633,9 +2594,9 @@ function App(props) {
                               {portfoliodata?.eosetfpriceineos ? (
 
                                 "= " + parseFloat(
-                                  tokens * portfoliodata?.eosetfpriceineos
+                                  tokens * parseFloat(etfprice?.toFixed(2))
                                 )?.toFixed(2) +
-                                " EOS"
+                                " WAX"
                               ) : (
                                   <CircularProgress
                                     style={{ color: "#5A83F1" }}
@@ -2757,9 +2718,9 @@ function App(props) {
                               <InputAdornment position="end">
                                 {"= "}{parseFloat(
                                   selltokenamount *
-                                  portfoliodata?.eosetfpriceinusd
+                                  parseFloat(etfprice?.toFixed(2))
                                 )?.toFixed(2)}
-                                {" USD"}
+                                {" WAX"}
                               </InputAdornment>
                             ),
                             startAdornment: (
@@ -3033,26 +2994,26 @@ function App(props) {
                 <div class="statcards">
                   <div class="statcard">
                     <a class="stat">
-                      {gettokensupply(eosetfbalance).toLocaleString()} WAXFUND
+                      {eosetfbalance?.rows[0]?.supply}
                     </a>
                     <a class="statexplainer">Circulating supply</a>
                   </div>
 
                   <div class="statcard">
                     <a class="stat">
-                      {gettokensupply(etfbalance).toLocaleString()} CETF
+                      {etfbalance?.rows[0]?.supply}
                     </a>
-                    <a class="statexplainer">Circulating supply (Max 80m)</a>
+                    <a class="statexplainer">Circulating supply (Max 10m)</a>
                   </div>
 
                   <div class="statcard">
                     <a class="stat">
-                      {parseFloat(etfprice?.toFixed(2))} EOS
+                      {parseFloat(etfprice?.toFixed(2))} WAX
                     </a>
                     <a class="statexplainer">WAXFUND price</a>
                   </div>
                   <div class="statcard">
-                    <a class="stat">{etfprice?.toFixed(2)} EOS </a>
+                    <a class="stat">{etfprice?.toFixed(2)} WAX </a>
                     <a class="statexplainer">
                       Price of tokens bought separately
                     </a>
